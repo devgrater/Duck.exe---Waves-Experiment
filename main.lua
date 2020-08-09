@@ -1,7 +1,13 @@
+--- Copyright (C) 2020 Alligrater
+--- This piece of software follows the MIT license. See LICENSE for detail.
+
+
 -- The game chose to be a rubber duck simulator --Alligrater
+-- Known issues:
+ -- Try drag the window around, you'll see what I mean.
 
 -- A bit of basic settings. These allow using canvas of any size and create good water bodies.
-resx = 64
+resx = 128
 resy = 64
 t = 0 --Used for determining wave offset
 baseWaterHeight = 24
@@ -11,11 +17,11 @@ local springs = {}
 local particles = {}
 local canvas
 
--- Just following the tutorial
---(https://gamedevelopment.tutsplus.com/tutorials/make-a-splash-with-dynamic-2d-water-effects--gamedev-236)
+--- Make a Splash With Dynamic 2D Water Effects (Michael Hoffman)
+--- https://gamedevelopment.tutsplus.com/tutorials/make-a-splash-with-dynamic-2d-water-effects--gamedev-236
 local springConstant = 0.425
-local springIteration = 2
-local waveSpread = 0.10
+local springIteration = 1 --This iteration count is massively reduced.
+local waveSpread = 0.2
 
 function love.load()
     io.stdout:setvbuf("no")
@@ -115,6 +121,7 @@ end
 -- Formula for calculating water waves.
 function getWaveHeightAt(point)
     return resy - (math.sin(((point + t * 1.5) / 6)) * -4 + baseWaterHeight)
+    --return baseWaterHeight
 end
 
 function createParticle(x, y, vx, vy, airfriction, ttl)
@@ -126,16 +133,19 @@ function createParticle(x, y, vx, vy, airfriction, ttl)
     table.insert(particles, particle)
 end
 
+--- Codes below this section are copied and modified from an existing tutorial. See detail below:
+--- Make a Splash With Dynamic 2D Water Effects (Michael Hoffman)
+--- https://gamedevelopment.tutsplus.com/tutorials/make-a-splash-with-dynamic-2d-water-effects--gamedev-236
 
--- Following the water tutorial. --Please read tutorial about this.
+-- Following the water tutorial.
 -- Though, we only used offset instead of height, because we only need to combine the offset with the waves.
 function updateSpring(spring, dt)
     local acclr = spring.offset * -springConstant
     spring.offset = spring.offset + spring.vel * dt
-    spring.vel = spring.vel * 0.99 + acclr * dt -- This constant here, will make the spring stop gradually, simulating the mechanical energy loss
+    spring.vel = spring.vel * 0.998 + acclr * dt
+    --                        This constant here, will make the spring stop gradually
 end
 
--- Also following the tutorial. Bascially exactly what the tutorial wrote, but in lua.
 function propagate()
     --for each springs...
     local lDeltas = {}
@@ -162,7 +172,6 @@ function propagate()
     end
 end
 
--- Also tutorial stuff
 function splash(index, vel)
     springs[index].vel = vel
 end

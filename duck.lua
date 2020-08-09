@@ -1,7 +1,10 @@
+--- Copyright (C) 2020 Alligrater
+--- This piece of software follows the MIT license. See LICENSE for detail.
+
 local g = 160
-local img = love.graphics.newImage("duck.png")
-local duck = love.graphics.newImage("duck_duck.png")
-local glide = love.graphics.newImage("duck_glide.png")
+local img = love.graphics.newImage("img/duck.png")
+local duck = love.graphics.newImage("img/duck_duck.png")
+local glide = love.graphics.newImage("img/duck_glide.png")
 local particleDelay = 0.1
 local currentParticleTime = 0
 
