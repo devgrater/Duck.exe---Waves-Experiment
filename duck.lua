@@ -50,7 +50,7 @@ function Duck.update(dt)
             -- The rest is just playing with these constants and find the best match.
             Duck.vecy = (Duck.vecy + diff * 80 * dt)
             Duck.vecy = Duck.vecy + g * 0.01 * dt
-            Duck.vecy = Duck.vecy * 0.990 --Dampen the force a bit so the duck doesn't go off screen.
+            Duck.vecy = Duck.vecy * 0.993 --Dampen the force a bit so the duck doesn't go off screen.
         else
             Duck.vecy = Duck.vecy + g * dt
         end
