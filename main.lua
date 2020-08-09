@@ -1,11 +1,7 @@
 --- Copyright (C) 2020 Alligrater
 --- This piece of software follows the MIT license. See LICENSE for detail.
 
-
 -- The game chose to be a rubber duck simulator --Alligrater
--- Known issues:
- -- Try drag the window around, you'll see what I mean.
-
 -- A bit of basic settings. These allow using canvas of any size and create good water bodies.
 resx = 128
 resy = 64
@@ -44,6 +40,8 @@ end
 
 function love.update(dt)
     --This timer is used for determining the sine wave offset.
+    if(dt > 0.03) then return end --30fps
+
     t = t + dt * 10
 
     Duck.update(dt)
