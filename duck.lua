@@ -2,17 +2,16 @@ local g = 160
 local img = love.graphics.newImage("duck.png")
 local duck = love.graphics.newImage("duck_duck.png")
 local glide = love.graphics.newImage("duck_glide.png")
+local particleDelay = 0.1
+local currentParticleTime = 0
 
 Duck = {}
-
 
 function Duck.init()
     Duck.x = 32
     Duck.y = 16
     Duck.vecy = 0
     Duck.swimSpeed = 32
-    --Duck.airSpeed = 0
-    --Duck.diveSpeed = 160 --Not used!
     Duck.isInAir = true
     Duck.isInWater = false
     Duck.wasInWater = false --Used for water particle polish -- Overall the performance is pretty ideal?
@@ -21,36 +20,31 @@ function Duck.init()
     Duck.startFlap = true --Whether this is the first time the duck uses flap -- Used only for sound effects
     Duck.isMoving = 0
     Duck.dirx = 1 --The direction that the duck, if moving, should move in.
-    --Duck.facing = 1 -- Not used!
     Duck.rot = 0 --Actual rotation of the duck due to waves
     Duck.displayRot = 0 -- The rotation that the player sees. This is interpolated over time.
     Duck.left = 0 --Whetehr left key is held
     Duck.right = 0 --Right key
-    Duck.hunger = 100 --This reduces over time. --This is now called health
-    Duck.invincibleTimer = 1 --Bascially how long we have to wait before the duck no longer becomes invincible.
-                             --If this value goes below 0, it means its not invincible.
 end
 
 Duck.init()
 
 function Duck.update(dt)
-    Duck.invincibleTimer = Duck.invincibleTimer - dt
-    --Dealing with the player hunger
-    --Hunger should also go slower, if there's lazers on the screen.
 
     -- Vertical Movement
     Duck.y = Duck.y + Duck.vecy * dt
     -- Horizontal movement
     Duck.x = Duck.x + (Duck.left + Duck.right) * Duck.isMoving * Duck.swimSpeed * dt
-    Duck.x = math.min(math.max(Duck.x, 4), 60) --Cap position
+    Duck.x = math.min(math.max(Duck.x, 4), resx - 4) --Cap position
 
     --Movement when touching water and not touching water
-    local pillar = getPointAt(Duck.x) - springs[math.floor(Duck.x)].offset / 2
-    if(Duck.y + 2 >=  64 - pillar) then -- If the player is touching water, we use different physics.
-        local diff = 64 - pillar - Duck.y
+    local pillar = getWaveHeightAt(Duck.x) -- Once we know the wave height, we can determine whether the duck is in water or in air.
+    if(Duck.y + 2 >= pillar) then -- If the player is touching water...
+        -- Calculate out how far the duck's bottom is from the top of the water.
+        local diff = pillar - Duck.y
         if(not Duck.isDiving) then
             --If the duck is not diving, apply a upward force to the duck. This usually pushes the duck upward
             --and the duck will bounce on water for a few times.
+            -- The rest is just playing with these constants and find the best match.
             Duck.vecy = (Duck.vecy + diff * 80 * dt)
             Duck.vecy = Duck.vecy + g * 0.01 * dt
             Duck.vecy = Duck.vecy * 0.990 --Dampen the force a bit so the duck doesn't go off screen.
@@ -58,8 +52,8 @@ function Duck.update(dt)
             Duck.vecy = Duck.vecy + g * dt
         end
         -- Cap the duck's y position so it doesn't dive off screen
-        if(Duck.y >= 53) then
-            Duck.y = 53
+        if(Duck.y >= resy - (baseWaterHeight - 15)) then
+            Duck.y = resy - (baseWaterHeight - 15)
             if(Duck.vecy > 0) then
                 Duck.vecy = 0
             end
@@ -69,7 +63,6 @@ function Duck.update(dt)
         Duck.startFlap = true
     else --Otherwise, use normal gravity.
         Duck.isInWater = false
-
         if(Duck.vecy < 0) then
             Duck.isInAir = true
         end
@@ -87,7 +80,23 @@ function Duck.update(dt)
         end
     end
 
-    -- If the duck jumped out of the water body, then we spawn a few particles.
+    --Duck move particles. This spawns every particleDelay seconds.
+    if(not Duck.isInAir and (Duck.left + Duck.right) ~= 0) then
+        if(currentParticleTime > particleDelay) then
+            currentParticleTime = 0
+            for i = 1,3 do
+                local x = (math.random() - 0.5) * 3 + Duck.x
+                local y = (math.random() - 0.5) * 3 + Duck.y
+                local vx = (math.random() - 0.5) * 8 - (Duck.left + Duck.right) * Duck.isMoving * Duck.swimSpeed / 2
+                local vy = -6 + (math.random() - 0.5) * 40
+                createParticle(x, y, vx, vy, 3, 0.5) --This particle has much less ttl
+            end
+        else
+            currentParticleTime = currentParticleTime + dt
+        end
+    end
+
+    -- If the duck jumped out of the water body, then we spawn a few particles that matches the duck's vector.
     if(Duck.wasInWater and not Duck.isInWater) then
         for i = 1,6 do
             local x = (math.random() - 0.5) * 3 + Duck.x
@@ -96,17 +105,19 @@ function Duck.update(dt)
             local vy = Duck.vecy / 2 + (math.random() - 0.5) * 40
             createParticle(x, y, vx, vy)
         end
-        splash(math.floor(Duck.x), Duck.vecy / 3)
-    elseif(not Duck.wasInWater and Duck.isInWater) then --If the duck jumped back in water, then we also spawn particles, with different settings.
+        -- Then, we can apply a force to the springs.
+        splash(math.floor(Duck.x), Duck.vecy)
+    --If the duck jumped back in water, then we also spawn particles, that are against the duck's vector.
+    elseif(not Duck.wasInWater and Duck.isInWater) then
         for i = 1,6 do
             local x = (math.random() - 0.5) * 3 + Duck.x
             local y = (math.random() - 0.5) * 3 + Duck.y
             -- Water partcile should move against the player's movement.
             local vx = (math.random() - 0.5) * 8 - (Duck.left + Duck.right) * Duck.isMoving * Duck.swimSpeed / 2
-            local vy = -Duck.vecy / 2 + (math.random() - 0.5) * 40
+            local vy = -Duck.vecy / 3 + (math.random() - 0.5) * 40
             createParticle(x, y, vx, vy)
         end
-        --Lets put splash function here:
+        -- Similarly, apply a force to the springs.
         splash(math.floor(Duck.x), Duck.vecy / 3)
     end
 
@@ -117,14 +128,13 @@ end
 
 function Duck.draw()
     if(not Duck.isInAir and not Duck.isDiving) then
-        --If not in air, use the wave diff between the two springs to determine how the duck should rotate.
-        --rot = --getPointAt(Duck.x)
-        local pointA = getPointAt(Duck.x)
-        local pointB = getPointAt(Duck.x + Duck.dirx * 0.5)
-        Duck.rot = math.atan(pointA - pointB, Duck.dirx * 0.5) * 0.8 * Duck.dirx
-    --else
-        --Duck.rot = 0
+        -- If not in air, we calculate out the slope between duck's x position and 1 pixel to the duck's facing direction.
+        local pointA = getWaveHeightAt(Duck.x)
+        local pointB = getWaveHeightAt(Duck.x + Duck.dirx * 0.5)
+        -- simple geometry -- The value is reduced by a bit such that the sprite doesn't get too distorted.
+        Duck.rot = math.atan(pointB - pointA, Duck.dirx * 0.5) * 0.8 * Duck.dirx
     end
+
     --Crude 1 frame animations -- Though, considering that it is a rubber duck, it probably shouldn't flap its wings
     if(Duck.isDiving) then
         love.graphics.draw(duck, Duck.x , Duck.y, Duck.displayRot, Duck.dirx, 1, 4, 6)
@@ -133,8 +143,6 @@ function Duck.draw()
     else
         love.graphics.draw(img, Duck.x , Duck.y, Duck.displayRot, Duck.dirx, 1, 4, 6)
     end
-    --Draw particles.
-
 end
 
 function Duck.keypressed(key)

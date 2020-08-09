@@ -1,31 +1,25 @@
 -- The game chose to be a rubber duck simulator --Alligrater
 
+-- A bit of basic settings. These allow using canvas of any size and create good water bodies.
+resx = 64
+resy = 64
+t = 0 --Used for determining wave offset
+baseWaterHeight = 24
+scaleUp = 5 -- Canvas scale up ratio
 
-local resx = 64
-local resy = 64
-local t = 0 --Used for determining wave offset
-local baseWaterHeight = 30
-
--- Screen shake stuff
-local shakeLast = 0
-local shakeFrq = 0
-local currentShakeTime = 0
-local shakeMagnitude = 0
-local screenOffset = {
-    x = 0, y = 0
-}
-
-local scaleUp = 8 -- Canvas scale up ratio
-springs = {}
+local springs = {}
 local particles = {}
+local canvas
 
+-- Just following the tutorial
+--(https://gamedevelopment.tutsplus.com/tutorials/make-a-splash-with-dynamic-2d-water-effects--gamedev-236)
 local springConstant = 0.425
-local springIteration = 3
-local waveSpread = 0.03
+local springIteration = 2
+local waveSpread = 0.10
 
 function love.load()
     io.stdout:setvbuf("no")
-    love.window.setTitle("Duck.exe")
+    love.window.setTitle("Duck.exe - Extra Side Project")
     love.window.setMode(resx * scaleUp, resy * scaleUp)
     love.graphics.setDefaultFilter("nearest", "nearest")
     love.graphics.setLineStyle("rough")
@@ -35,83 +29,83 @@ function love.load()
 
     canvas = love.graphics.newCanvas(resx,resy)
 
-    -- Just following the tutorial (https://gamedevelopment.tutsplus.com/tutorials/make-a-splash-with-dynamic-2d-water-effects--gamedev-236)
-    for i = 1, 64 do
+    --Populate the water springs.
+    for i = 1, resx do
         local spring = {offset = 0, vel = 0}
         table.insert(springs, spring)
     end
 end
 
 function love.update(dt)
+    --This timer is used for determining the sine wave offset.
     t = t + dt * 10
 
     Duck.update(dt)
-    --Gotta update the springs!
+
+    -- Wave physics. Not originally included in the base game but i feel like as a side project it's cool to have.
     for i,v in pairs(springs) do
         updateSpring(v, dt * 10)
     end
-
-    -- Then, propagate?
     propagate()
 
     --Polish: Water Particles
     for i,v in pairs(particles) do
+        -- If the particle has lived longer than the designated time to live, destroy the particle.
         if(v.tl > v.ttl) then
             table.remove(particles, i)
         else
+            -- Apply gravity and then displace particle
             v.vy = v.vy + 160 * dt
             v.y = v.y + v.vy * dt
-            -- Apply air friction
+            -- Apply air friction, and displace particle.
             if(v.vx < 0) then v.vx = math.min(v.vx + v.af * dt, 0)
             else v.vx = math.max(v.vx - v.af * dt, 0) end
-            --v.vx = v.vx
             v.x = v.x + v.vx * dt
+            -- Update the particles' "time lived" value.
             v.tl = v.tl + dt
         end
     end
-
-    screenShake(dt)
 end
 
+
 function love.draw()
+    --Originally created for LOWREZJAM2020, so I had to use canvas to scale up things.
     love.graphics.setCanvas(canvas)
     love.graphics.clear()
 
         Duck.draw()
+
         --Draws water body
         love.graphics.setColor(0.2, 0.6, 0.8 + 0.2, 0.85)
         love.graphics.setLineWidth(1)
-        for i = 1, 64 do
-            local v = getPointAt(i)
-            love.graphics.line(i, (64 - v + springs[i].offset), i, 64)
+        for i = 1, resx do
+            -- Take the base sine wave (getWaveHeightAt()), and combine it with the spring offset.
+            local v = getWaveHeightAt(i)
+            love.graphics.line(i, (v + springs[i].offset), i, resy)
         end
 
         --Draw water particle, if the particle is above water level.
+        -- Thanks to the canvas being smol, I can just use points to mimic metaballs.
         for i,v in pairs(particles) do
-            local offset = 0
+            local offset = 0 --This gets me the offset of the springs.
             local index = math.floor(v.x)
-            if(index > 1 and index <= 64) then
+            --Gonna quickly check if the coordinate of this is within the bounds.
+            --If not, don't even bother drawing the particles.
+            if(index >= 1 and index <= resx) then
                 offset = springs[index].offset
-            end
-            if(v.y <= 64 - getPointAt(v.x) + offset) then
-                --Draw:
-                love.graphics.points(v.x, v.y)
+                if(v.y <= getWaveHeightAt(v.x) + offset) then
+                    love.graphics.points(v.x, v.y)
+                end
             end
         end
 
-    --Draw out the UI Texts
     love.graphics.setColor(1, 1, 1, 1.0)
     love.graphics.setCanvas()
-    love.graphics.draw(canvas,screenOffset.x * scaleUp,screenOffset.y * scaleUp, 0,scaleUp,scaleUp)
+    love.graphics.draw(canvas,0,0, 0,scaleUp,scaleUp)
 end
 
 function love.keypressed(key)
-    if(isGameOver and gameOverWait <= 0) then
-        initGame()
-        firstStart = false
-    else
-        Duck.keypressed(key)
-    end
+    Duck.keypressed(key)
 end
 
 function love.keyreleased(key)
@@ -119,34 +113,8 @@ function love.keyreleased(key)
 end
 
 -- Formula for calculating water waves.
-function getPointAt(point)
-    return math.sin(((point + t * 1.5) / 6)) * -3 + baseWaterHeight
-end
-
-function scheduleScreenShake(last, frequency, amplitude )
-    shakeLast = last
-    shakeMagnitude = amplitude
-    shakeFrq = frequency
-end
-
-function screenShake(dt)
-    if(shakeLast <= 0) then screenOffset = {x = 0, y = 0} return end
-    shakeLast = shakeLast - dt
-    currentShakeTime = currentShakeTime + dt
-    if(currentShakeTime >= shakeFrq) then
-        currentShakeTime = 0
-        --Update the screen
-        local shakeX = math.random(-shakeMagnitude, shakeMagnitude)
-        while(shakeX == 0) do
-            shakeX = math.random(-shakeMagnitude, shakeMagnitude)
-        end
-        local shakeY = math.random(-shakeMagnitude, shakeMagnitude)
-        while(shakeY == 0) do
-            shakeY = math.random(-shakeMagnitude, shakeMagnitude)
-        end
-        screenOffset.x = shakeX
-        screenOffset.y = shakeY
-    end
+function getWaveHeightAt(point)
+    return resy - (math.sin(((point + t * 1.5) / 6)) * -4 + baseWaterHeight)
 end
 
 function createParticle(x, y, vx, vy, airfriction, ttl)
@@ -158,12 +126,16 @@ function createParticle(x, y, vx, vy, airfriction, ttl)
     table.insert(particles, particle)
 end
 
+
+-- Following the water tutorial. --Please read tutorial about this.
+-- Though, we only used offset instead of height, because we only need to combine the offset with the waves.
 function updateSpring(spring, dt)
     local acclr = spring.offset * -springConstant
     spring.offset = spring.offset + spring.vel * dt
-    spring.vel = (spring.vel + acclr * dt) * 0.999 -- This constant here, will make the spring stop gradually, simulating the mechanical energy loss
+    spring.vel = spring.vel * 0.99 + acclr * dt -- This constant here, will make the spring stop gradually, simulating the mechanical energy loss
 end
--- this is also just following the tutorial.
+
+-- Also following the tutorial. Bascially exactly what the tutorial wrote, but in lua.
 function propagate()
     --for each springs...
     local lDeltas = {}
@@ -190,6 +162,7 @@ function propagate()
     end
 end
 
+-- Also tutorial stuff
 function splash(index, vel)
     springs[index].vel = vel
 end
