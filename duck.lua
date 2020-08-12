@@ -27,6 +27,7 @@ function Duck.init()
     Duck.displayRot = 0 -- The rotation that the player sees. This is interpolated over time.
     Duck.left = 0 --Whetehr left key is held
     Duck.right = 0 --Right key
+    Duck.useFrame1 = false
 end
 
 Duck.init()
@@ -48,7 +49,7 @@ function Duck.update(dt)
             --If the duck is not diving, apply a upward force to the duck. This usually pushes the duck upward
             --and the duck will bounce on water for a few times.
             -- The rest is just playing with these constants and find the best match.
-            Duck.vecy = (Duck.vecy + diff * 80 * dt)
+            Duck.vecy = (Duck.vecy + diff * 60 * dt)
             Duck.vecy = Duck.vecy + g * 0.01 * dt
             Duck.vecy = Duck.vecy * 0.993 --Dampen the force a bit so the duck doesn't go off screen.
         else
@@ -97,6 +98,7 @@ function Duck.update(dt)
         else
             currentParticleTime = currentParticleTime + dt
         end
+
     end
 
     -- If the duck jumped out of the water body, then we spawn a few particles that matches the duck's vector.
@@ -109,7 +111,7 @@ function Duck.update(dt)
             createParticle(x, y, vx, vy)
         end
         -- Then, we can apply a force to the springs.
-        splash(math.floor(Duck.x), Duck.vecy)
+        splash(math.floor(Duck.x), Duck.vecy / 2)
     --If the duck jumped back in water, then we also spawn particles, that are against the duck's vector.
     elseif(not Duck.wasInWater and Duck.isInWater) then
         for i = 1,6 do
@@ -121,7 +123,7 @@ function Duck.update(dt)
             createParticle(x, y, vx, vy)
         end
         -- Similarly, apply a force to the springs.
-        splash(math.floor(Duck.x), Duck.vecy / 3)
+        splash(math.floor(Duck.x), Duck.vecy / 2)
     end
 
     --Interpolate the displayed rotation
@@ -142,7 +144,14 @@ function Duck.draw()
     if(Duck.isDiving) then
         love.graphics.draw(duck, Duck.x , Duck.y, Duck.displayRot, Duck.dirx, 1, 4, 6)
     elseif(Duck.isFlapping and Duck.isInAir and Duck.vecy > 0) then
-        love.graphics.draw(glide, Duck.x , Duck.y, Duck.displayRot, Duck.dirx, 1, 4, 6)
+        if(Duck.useFrame1) then
+            love.graphics.draw(glide, Duck.x , Duck.y, Duck.displayRot, Duck.dirx, 1, 4, 6)
+            Duck.useFrame1 = false
+        else
+            love.graphics.draw(img, Duck.x , Duck.y, Duck.displayRot, Duck.dirx, 1, 4, 6)
+            Duck.useFrame1 = true
+        end
+
     else
         love.graphics.draw(img, Duck.x , Duck.y, Duck.displayRot, Duck.dirx, 1, 4, 6)
     end

@@ -3,7 +3,7 @@
 
 -- The game chose to be a rubber duck simulator --Alligrater
 -- A bit of basic settings. These allow using canvas of any size and create good water bodies.
-resx = 128
+resx = 64
 resy = 64
 t = 0 --Used for determining wave offset
 baseWaterHeight = 24
@@ -15,9 +15,9 @@ local canvas
 
 --- Make a Splash With Dynamic 2D Water Effects (Michael Hoffman)
 --- https://gamedevelopment.tutsplus.com/tutorials/make-a-splash-with-dynamic-2d-water-effects--gamedev-236
-local springConstant = 0.425
+local springConstant = 0.325
 local springIteration = 1 --This iteration count is massively reduced.
-local waveSpread = 0.2
+local waveSpread = 0.1
 
 function love.load()
     io.stdout:setvbuf("no")
@@ -36,6 +36,7 @@ function love.load()
         local spring = {offset = 0, vel = 0}
         table.insert(springs, spring)
     end
+    --profiler.start()
 end
 
 function love.update(dt)
@@ -97,7 +98,7 @@ function love.draw()
             --If not, don't even bother drawing the particles.
             if(index >= 1 and index <= resx) then
                 offset = springs[index].offset
-                if(v.y <= getWaveHeightAt(v.x) + offset) then
+                if(v.y < getWaveHeightAt(v.x) + offset) then
                     love.graphics.points(v.x, v.y)
                 end
             end
@@ -106,10 +107,15 @@ function love.draw()
     love.graphics.setColor(1, 1, 1, 1.0)
     love.graphics.setCanvas()
     love.graphics.draw(canvas,0,0, 0,scaleUp,scaleUp)
+    --love.graphics.print('Memory actually used (in kB): ' .. collectgarbage('count'), 10,10)
 end
 
 function love.keypressed(key)
     Duck.keypressed(key)
+    if(key == "space") then
+        --profiler.stop()
+        --print(profiler.report(20))
+    end
 end
 
 function love.keyreleased(key)
@@ -117,9 +123,11 @@ function love.keyreleased(key)
 end
 
 -- Formula for calculating water waves.
+
 function getWaveHeightAt(point)
-    return resy - (math.sin(((point + t * 1.5) / 6)) * -4 + baseWaterHeight)
-    --return baseWaterHeight
+    return resy - (math.sin(((point + t * 1.5) / 6)) * 4  + baseWaterHeight)
+    --return resy - (math.sin(((point + t * 1.5) / 8)) * -1 + baseWaterHeight + math.sin(((point + t * 3) / 4)) * -1)
+    --return resy - baseWaterHeight
 end
 
 function createParticle(x, y, vx, vy, airfriction, ttl)
@@ -140,7 +148,7 @@ end
 function updateSpring(spring, dt)
     local acclr = spring.offset * -springConstant
     spring.offset = spring.offset + spring.vel * dt
-    spring.vel = spring.vel * 0.998 + acclr * dt
+    spring.vel = spring.vel * 0.996 + acclr * dt
     --                        This constant here, will make the spring stop gradually
 end
 
