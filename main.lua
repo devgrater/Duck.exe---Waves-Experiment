@@ -81,7 +81,7 @@ function love.draw()
         Duck.draw()
 
         --Draws water body
-        love.graphics.setColor(0.2, 0.6, 0.8 + 0.2, 0.85)
+        love.graphics.setColor(0.2, 0.6, 1.0, 0.85)
         love.graphics.setLineWidth(1)
         for i = 1, resx do
             -- Take the base sine wave (getWaveHeightAt()), and combine it with the spring offset.
@@ -125,7 +125,16 @@ end
 -- Formula for calculating water waves.
 
 function getWaveHeightAt(point)
-    return resy - (math.sin(((point + t * 1.5) / 6)) * 4  + baseWaterHeight)
+    --Wouldn't work if we try to implement a gerstner wave...
+    --But! I have a solution that looks nice!
+    --\sin\left(0.3x\right)-3\ \cdot\operatorname{abs}\left(\cos\left(0.3x+t\right)\ \right) -> try pasting this in desmos.com/calculator, and drag the t value.
+    -- It's not exactly a gerstner wave, but looks close enough... Maybe even looks better!
+    local wave = 2 + math.sin(0.1 * point) - 3 * math.abs(math.cos(0.1 * point + t * 0.3))
+    return resy - (wave * 1.5 + baseWaterHeight)
+
+    --return resy - (xpos + baseWaterHeight)
+
+    --return resy - (math.sin(((point + t * 1.5) / 6)) * 4  + baseWaterHeight)
     --return resy - (math.sin(((point + t * 1.5) / 8)) * -1 + baseWaterHeight + math.sin(((point + t * 3) / 4)) * -1)
     --return resy - baseWaterHeight
 end

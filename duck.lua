@@ -127,7 +127,10 @@ function Duck.update(dt)
     end
 
     --Interpolate the displayed rotation
-    Duck.displayRot = (Duck.rot - Duck.displayRot) * math.min(40 * dt, 1.0) + Duck.displayRot
+    if(Duck.isInWater) then
+        Duck.displayRot = (Duck.rot - Duck.displayRot) * math.min(10 * dt, 1.0) + Duck.displayRot
+    end
+
     Duck.wasInWater = Duck.isInWater
 end
 
