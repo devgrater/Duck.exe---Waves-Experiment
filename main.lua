@@ -124,19 +124,19 @@ end
 
 -- Formula for calculating water waves.
 
+-- Different presets for you to experiment... I guess. Some may break the game? I don't know.
 function getWaveHeightAt(point)
-    --Wouldn't work if we try to implement a gerstner wave...
-    --But! I have a solution that looks nice!
-    --\sin\left(0.3x\right)-3\ \cdot\operatorname{abs}\left(\cos\left(0.3x+t\right)\ \right) -> try pasting this in desmos.com/calculator, and drag the t value.
-    -- It's not exactly a gerstner wave, but looks close enough... Maybe even looks better!
-    local wave = 2 + math.sin(0.1 * point) - 3 * math.abs(math.cos(0.1 * point + t * 0.3))
-    return resy - (wave * 1.5 + baseWaterHeight)
-
-    --return resy - (xpos + baseWaterHeight)
-
-    --return resy - (math.sin(((point + t * 1.5) / 6)) * 4  + baseWaterHeight)
-    --return resy - (math.sin(((point + t * 1.5) / 8)) * -1 + baseWaterHeight + math.sin(((point + t * 3) / 4)) * -1)
-    --return resy - baseWaterHeight
+    -- Gerstner:
+    -- Try paste this in desmos: 1-\sin\left(0.5\cos\left(x\cdot2-t\right)+x\cdot2-t\right)
+        --local wave = (1 - math.sin(0.4 * math.cos(point / 6+t * 0.5)+point / 6+t *0.5)) * 4
+    -- Pseudo-Gerstner (Honestly this looks the best)
+    -- Try paste this in desmos: 2\+\\sin\left(0.1x\right)-3\cdot\operatorname{abs}\left(\cos\left(0.1x+0.3t\right)\right)\cdot2
+        local wave = (2 + math.sin(0.1 * point) - 3 * math.abs(math.cos(0.1 * point + t * 0.3))) * 2
+    -- The sine wave I used in the video clip
+        --local wave = math.sin(((point + t * 1.5) / 6)) * 4
+    -- Flat
+        --local wave = 0
+    return resy - (wave + baseWaterHeight)
 end
 
 function createParticle(x, y, vx, vy, airfriction, ttl)
