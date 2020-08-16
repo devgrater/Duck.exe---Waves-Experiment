@@ -33,10 +33,16 @@ end
 Duck.init()
 
 function Duck.update(dt)
-
+    --- Duck movement explained:
+    --- The movement is based on a regular platformer movement.
+    --- Whenever the duck is below water, a upward force is applied to the duck such that the duck can float on water.
+    --- Gravity is reduced when the duck is in water to simulate the water friction
+    
+    
     -- Vertical Movement
     Duck.y = Duck.y + Duck.vecy * dt
     -- Horizontal movement
+    
     Duck.x = Duck.x + (Duck.left + Duck.right) * Duck.isMoving * Duck.swimSpeed * dt
     Duck.x = math.min(math.max(Duck.x, 4), resx - 4) --Cap position
 
@@ -65,7 +71,7 @@ function Duck.update(dt)
         Duck.isInAir = false
         Duck.isInWater = true
         Duck.startFlap = true
-    else --Otherwise, use normal gravity.
+    else --If duck is not in water, use normal gravity.
         Duck.isInWater = false
         if(Duck.vecy < 0) then
             Duck.isInAir = true
@@ -110,7 +116,7 @@ function Duck.update(dt)
             local vy = Duck.vecy / 2 + (math.random() - 0.5) * 40
             createParticle(x, y, vx, vy)
         end
-        -- Then, we can apply a force to the springs.
+        -- Then, we can apply a force to the springs. 
         splash(math.floor(Duck.x), Duck.vecy / 2)
     --If the duck jumped back in water, then we also spawn particles, that are against the duck's vector.
     elseif(not Duck.wasInWater and Duck.isInWater) then
