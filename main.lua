@@ -31,7 +31,7 @@ function love.load()
 
     canvas = love.graphics.newCanvas(resx,resy)
 
-    --Populate the water springs.
+    --Populate the water springs. (See Tutorial)
     for i = 1, resx do
         local spring = {offset = 0, vel = 0}
         table.insert(springs, spring)
@@ -41,7 +41,7 @@ end
 
 function love.update(dt)
     --This timer is used for determining the sine wave offset.
-    if(dt > 0.03) then return end --30fps
+    if(dt > 0.03) then return end --30fps -- This is used to address the bug of dragging window breaking certain sections of the game.
 
     t = t + dt * 10
 
