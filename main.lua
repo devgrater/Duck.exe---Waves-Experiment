@@ -131,7 +131,7 @@ function getWaveHeightAt(point)
     -- Try paste this in desmos: 1-\sin\left(0.8\cos\left(x\cdot2-t\right)+x\cdot2-t\right)-\sin\left(x\cdot2-t\right)
         --local wave = (1 - math.sin(0.9 * math.cos(point / 6+t * 0.4)+point / 6+t *0.4) - math.sin(point / 6 + t * 0.4)) * 2
     -- Pseudo-Gerstner (Honestly this looks the best)
-    -- Try paste this in desmos: 2\+\\sin\left(0.1x\right)-3\cdot\operatorname{abs}\left(\cos\left(0.1x+0.3t\right)\right)\cdot2
+    -- Try paste this in desmos: 2+\sin\left(0.1x\right)-3\cdot\operatorname{abs}\left(\cos\left(0.1x+0.3t\right)\right)\cdot2
     -- Also requires 1 less sine operation, so potentially faster?
         local wave = (2 + math.sin(0.1 * point) - 3 * math.abs(math.cos(0.1 * point + t * 0.2))) * 2
     -- The sine wave I used in the video clip
