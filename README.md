@@ -5,5 +5,5 @@ Check out the submission to the jam [here](https://alligrater.itch.io/duckexe)
 
 
 ## Prerequisites
-[LOVE2D](love2d.org)
+[LOVE2D](https://love2d.org)
 
