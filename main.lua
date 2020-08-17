@@ -165,6 +165,7 @@ end
 
 function propagate()
     --for each springs...
+    -- This is the exact same code as the one found in the tutorial.
     local lDeltas = {}
     local rDeltas = {}
     for j = 1, springIteration do
